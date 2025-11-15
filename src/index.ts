@@ -4,7 +4,7 @@ import { stdin as input, stdout as output } from "node:process";
 const rl = readline.createInterface({ input, output });
 
 
-//-------------------------------------------------------------//
+//--------------Interfaz de las tareas----------------//
 const STATUS = Object.freeze({
     PENDING: "pendiente",
     IN_PROGRESS: "en progreso",
@@ -32,7 +32,6 @@ interface Task {
 }
 
 
-
 //----------Estado inicial de las tareas---------//
 
 const initialTasks: readonly Task[] = Object.freeze([
@@ -57,8 +56,7 @@ const initialTasks: readonly Task[] = Object.freeze([
         lastEdited: new Date()
     }
 ]);
-
-
+let tasks: Task[] = [...initialTasks];
 
 //-----Funciones de entrada de datos------//
 async function getStringInput(message: string): Promise<string> {
@@ -93,107 +91,47 @@ async function getMenuNumber(message: string): Promise<number> {
 //----------------------------------------//
 
 //------------Listas de tareas------------//
-async function listAllTasks(): Promise<void> {
+async function listTasksByStatus(status: "todas" | "pendiente" | "en progreso" | "completado"): Promise<void> {
     console.clear();
-    if (tasks.length === 0) {
-        console.log("\nNo tienes tareas registradas.\n");
+
+    const filteredTasks = 
+        status === "todas" 
+            ? tasks 
+            : tasks.filter(task => task.status === status);
+
+    if (filteredTasks.length === 0) {
+        console.log(`\nNo tienes tareas ${status === "todas" ? "" : status} registradas.\n`);
         return;
     }
 
-    console.log("\nEstas son todas tus tareas.\n");
+    console.log(`\nEstas son tus tareas ${status === "todas" ? "" : status}.\n`);
 
-    tasks.forEach((task: Task, index: number) => {
+    filteredTasks.forEach((task, index) => {
         console.log(`${index + 1}. ${task.title}`);
     });
 
     let userInput: number = await getMenuNumber("\nIngresa el número de la tarea para ver detalles, o 0 para volver: ");
     if (userInput === 0) return;
 
-    if (userInput >= 1 && userInput <= tasks.length) {
-        const selectedTask: Task = tasks[userInput - 1]!;
+    if (userInput >= 1 && userInput <= filteredTasks.length) {
+        const selectedTask = filteredTasks[userInput - 1]!;
         await showTaskDetails(selectedTask);
     } else {
         console.log("Opción inválida. Intenta de nuevo.");
-        await listAllTasks();
+        await listTasksByStatus(status);
     }
 }
-async function listPendingTasks(): Promise<void> {
-    console.clear();
-    const pendingTasks: Task[] = tasks.filter(task => task.status === "pendiente");
-
-    if (pendingTasks.length === 0) {
-        console.log("\nNo tienes tareas pendientes registradas.\n");
-        return;
-    }
-
-    console.log("\nEstas son tus tareas pendientes.\n");
-
-    pendingTasks.forEach((task: Task, index: number) => {
-        console.log(`${index + 1}. ${task.title}`);
-    });
-
-    let userInput: number = await getMenuNumber("\nIngresa el número de la tarea para ver detalles, o 0 para volver: ");
-    if (userInput === 0) return;
-
-    if (userInput >= 1 && userInput <= pendingTasks.length) {
-        const selectedTask: Task = pendingTasks[userInput - 1]!;
-        await showTaskDetails(selectedTask);
-    } else {
-        console.log("Opción inválida. Intenta de nuevo.");
-        await listPendingTasks();
-    }
+async function listAllTasks() {
+    await listTasksByStatus("todas");
 }
-async function listInProgressTasks(): Promise<void> {
-    console.clear();
-    const inProgressTasks = tasks.filter(task => task.status === "en progreso");
-
-    if (inProgressTasks.length === 0) {
-        console.log("\nNo tienes tareas en progreso registradas.\n");
-        return;
-    }
-
-    console.log("\nEstas son tus tareas en progreso.\n");
-
-    inProgressTasks.forEach((task: Task, index: number) => {
-        console.log(`${index + 1}. ${task.title}`);
-    });
-
-    let userInput: number = await getMenuNumber("\nIngresa el número de la tarea para ver detalles, o 0 para volver: ");
-    if (userInput === 0) return;
-
-    if (userInput >= 1 && userInput <= inProgressTasks.length) {
-        const selectedTask: Task = inProgressTasks[userInput - 1]!;
-        await showTaskDetails(selectedTask);
-    } else {
-        console.log("Opción inválida. Intenta de nuevo.");
-        await listInProgressTasks();
-    }
+async function listPendingTasks() {
+    await listTasksByStatus("pendiente");
 }
-async function listCompletedTasks(): Promise<void> {
-    console.clear();
-    const completedTasks = tasks.filter(task => task.status === "completado");
-
-    if (completedTasks.length === 0) {
-        console.log("\nNo tienes tareas completadas registradas.\n");
-        return;
-    }
-
-    console.log("\nEstas son tus tareas completadas.\n");
-
-    completedTasks.forEach((task: Task, index: number) => {
-        console.log(`${index + 1}. ${task.title}`);
-    });
-
-    let userInput: number = await getMenuNumber("\nIngresa el número de la tarea para ver detalles, o 0 para volver: ");
-    if (userInput === 0) return;
-
-    if (userInput >= 1 && userInput <= completedTasks.length) {
-        const selectedTask: Task = completedTasks[userInput - 1]!;
-        await showTaskDetails(selectedTask);
-    } else {
-        console.log("Opción inválida. Intenta de nuevo.");
-        await listCompletedTasks();
-    }
+async function listInProgressTasks() {
+    await listTasksByStatus("en progreso");
+}
+async function listCompletedTasks() {
+    await listTasksByStatus("completado");
 }
 //---------------------------------------//
 
