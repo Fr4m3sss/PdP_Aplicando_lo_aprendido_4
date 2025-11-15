@@ -61,7 +61,6 @@ let tasks: Task[] = [...initialTasks];
 //-----Funciones de entrada de datos------//
 async function getStringInput(message: string): Promise<string> {
     let input: string;
-    const MAX_LENGTH = 500;
 
     while (true) {
         input = await rl.question(message);
@@ -69,8 +68,6 @@ async function getStringInput(message: string): Promise<string> {
 
         if (input === "") {
             console.log("ERROR: No puedes dejarlo vacío.");
-        } else if (input.length > MAX_LENGTH) {
-            console.log("ERROR: La entrada es demasiado larga.");
         }
         else {
             return input;
@@ -89,6 +86,7 @@ async function getMenuNumber(message: string): Promise<number> {
     }
 }
 //----------------------------------------//
+
 
 //------------Listas de tareas------------//
 async function listTasksByStatus(status: "todas" | "pendiente" | "en progreso" | "completado"): Promise<void> {
@@ -133,7 +131,9 @@ async function listInProgressTasks() {
 async function listCompletedTasks() {
     await listTasksByStatus("completado");
 }
-//---------------------------------------//
+
+
+//---Mostrar menu y detalles de tarea-----//
 
 async function showViewTasksMenu(): Promise<void> {
     let exit: boolean = false;
@@ -204,6 +204,7 @@ Vencimiento: ${selectedTask.dueDate ? selectedTask.dueDate.toLocaleString() : "S
     } while (!exit);
 }
 
+
 //----Funciones de edición de tareas----//
 async function editTask(selectedTask: Task): Promise<void> {
     console.clear();
@@ -220,17 +221,38 @@ async function editTask(selectedTask: Task): Promise<void> {
 }
 async function editTitle(selectedTask: Task): Promise<void> {
     console.clear();
-    const input: string = await getStringInput(
-        "1. Ingresa un nuevo título (deja en blanco para mantenerlo, espacio para borrar): "
+
+    const input = await rl.question(
+        "1. Ingresa un nuevo título (Enter para mantener, espacio para borrar): "
     );
 
+    // CASO 1: mantener
     if (input === "") {
-        // Mantener título actual
-    } else if (input === " ") {
-        selectedTask.title = "";
-    } else {
-        selectedTask.title = input;
+        return;
     }
+
+    // CASO 2: borrar
+    if (input === " ") {
+        selectedTask.title = "";
+        return;
+    }
+
+    const trimmed = input.trim();
+
+    // CASO 3: error
+    if (trimmed === "") {
+        console.log("El título no puede quedar vacío.");
+        return await editTitle(selectedTask);
+    }
+
+    // CASO 4: Longitud maxima
+    if (trimmed.length > 100) {
+        console.log("El título no puede superar los 100 caracteres.");
+        return await editTitle(selectedTask);
+    }
+
+    // CASO 5: guardar
+    selectedTask.title = trimmed;
 }
 async function editDescription(selectedTask: Task): Promise<void> {
     console.clear();
@@ -238,96 +260,158 @@ async function editDescription(selectedTask: Task): Promise<void> {
         "2. Ingresa una nueva descripción (deja en blanco para mantenerla, espacio para borrar): "
     );
 
+    // Mantener descripción actual
     if (input === "") {
-        // Mantener descripción actual
-    } else if (input === " ") {
+        return;
+    } 
+    
+    if (input === " ") {
         selectedTask.description = "";
-    } else {
-        selectedTask.description = input;
+        return;
+    } 
+
+    if (input.length > 500) {
+        console.log("La descripción no puede superar los 500 caracteres.");
+        return await editDescription(selectedTask);
     }
+    
+    selectedTask.description = input;
+    
 }
+
 async function editStatus(selectedTask: Task): Promise<void> {
     console.clear();
-    const editStatus: string = (
-        await getStringInput(
-            `3. Ingresa un nuevo estado:
+
+    const input: string = await getStringInput(
+`3. Ingresa un nuevo estado:
 - pendiente
 - en progreso
-- completado`
-        )
-    ).toLowerCase();
-
-    switch (editStatus) {
-        case "":
-            break; // Mantener estado
-        case " ":
-            selectedTask.status = "";
-            break;
-        case "pendiente":
-        case "en progreso":
-        case "completado":
-            selectedTask.status = editStatus as Status;
-            break;
-        default:
-            console.log("Has ingresado un estado inválido.");
-    }
-}
-async function editDifficulty(selectedTask: Task): Promise<void> {
-    console.clear();
-    const editDifficulty: string = (
-        await getStringInput(
-            `4. Ingresa una nueva dificultad:
-- facil
-- medio
-- dificil`
-        )
-    ).toLowerCase();
-
-    switch (editDifficulty) {
-        case "":
-            break; // Mantener dificultad
-        case " ":
-            selectedTask.difficulty = "";
-            break;
-        case "facil":
-        case "medio":
-        case "dificil":
-            selectedTask.difficulty = editDifficulty as Difficulty;
-            break;
-        default:
-            console.log("Has ingresado una dificultad inválida.");
-    }
-}
-async function editDueDate(selectedTask: Task): Promise<void> {
-    const input: string = await getStringInput(
-        `5. Ingresa nueva fecha de vencimiento (dd/mm/yyyy)
-deja en blanco para mantenerla, o escribe un espacio para borrar: `
+- completado
+- cancelada
+(Enter para mantener): `
     );
 
+    // Mantener
     if (input === "") {
-        return; // Mantener fecha actual
-    } else if (input === " ") {
-        selectedTask.dueDate = null;
         return;
-    } else {
-        const parts: string[] = input.split("/");
-        if (parts.length === 3) {
-            const day: number = parseInt(parts[0]!, 10);
-            const month: number = parseInt(parts[1]!, 10) - 1;
-            const year: number = parseInt(parts[2]!, 10);
-
-
-            const newDate: Date = new Date(year, month, day);
-
-            if (!isNaN(newDate.getTime())) {
-                selectedTask.dueDate = newDate;
-            } else {
-                console.log("Fecha inválida. Debe ser un día válido.");
-            }
-        } else {
-            console.log("Formato incorrecto. Usa dd/mm/yyyy.");
-        }
     }
+
+    const trimmed = input.trim().toLowerCase();
+
+    // Vacío (solo espacios) → NO permitido
+    if (trimmed === "") {
+        console.log("El estado no puede quedar vacío.");
+        return await editStatus(selectedTask);
+    }
+
+    // Lista de estados válidos
+    const validStatuses: Status[] = [
+        STATUS.PENDING,
+        STATUS.IN_PROGRESS,
+        STATUS.COMPLETED,
+        STATUS.CANCELED
+    ];
+
+    // Validación
+    if (!validStatuses.includes(trimmed as Status)) {
+        console.log("Has ingresado un estado inválido.");
+        return await editStatus(selectedTask);
+    }
+
+    // Asignación
+    selectedTask.status = trimmed as Status;
+}
+
+async function editDifficulty(selectedTask: Task): Promise<void> {
+
+    console.clear();
+
+    const input: string = (await getStringInput(
+`4. Ingresa una nueva dificultad:
+- facil
+- medio
+- dificil
+(Enter para mantener): `
+));
+
+    // Mantener
+    if (input === "") {
+        return;
+    }
+
+    const trimmed = input.trim().toLowerCase();
+
+    // Vacío (solo espacios) → NO permitido
+    if (trimmed === "") {
+        console.log("La dificultad no puede quedar vacía.");
+        return await editStatus(selectedTask);
+    }
+
+    const validDifficulties: Difficulty[] = [
+        DIFFICULTY.EASY,
+        DIFFICULTY.MEDIUM,
+        DIFFICULTY.HARD
+    ];
+
+    if (!validDifficulties.includes(trimmed as Difficulty)) {
+        console.log("Has ingresado una dificultad inválida.");
+        return await editDifficulty(selectedTask);
+    }
+
+    selectedTask.difficulty = trimmed as Difficulty;
+
+}
+
+async function editDueDate(selectedTask: Task): Promise<void> {
+    console.clear();
+
+    const input = await getStringInput(
+`5. Ingresa nueva fecha de vencimiento (dd/mm/yyyy)
+(Enter para mantenerla, espacio para borrar): `
+    );
+
+    // Mantener fecha actual
+    if (input === "") return;
+
+    const trimmed = input.trim();
+
+    // Borrar fecha
+    if (trimmed === "") {
+        selectedTask.dueDate = null;
+        console.log("Fecha eliminada.");
+        return;
+    }
+
+    // Validar formato básico
+    const parts = trimmed.split("/");
+    if (parts.length !== 3) {
+        console.log("Formato incorrecto. Usa dd/mm/yyyy.");
+        return await editDueDate(selectedTask);
+    }
+
+    const [dd, mm, yyyy] = parts.map(n => parseInt(n, 10));
+
+    // Validaciones numéricas básicas
+    if (isNaN(dd) || isNaN(mm) || isNaN(yyyy)) {
+        console.log("La fecha debe contener solo números.");
+        return await editDueDate(selectedTask);
+    }
+
+    if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 1900) {
+        console.log("Fecha inválida. Revisa el día, mes o año.");
+        return await editDueDate(selectedTask);
+    }
+
+    // Validación con Date real
+    const newDate = new Date(yyyy, mm - 1, dd);
+
+    if (isNaN(newDate.getTime())) {
+        console.log("Fecha inválida.");
+        return await editDueDate(selectedTask);
+    }
+
+    selectedTask.dueDate = newDate;
+    console.log("Fecha actualizada.");
 }
 //---------------------------------------//
 
