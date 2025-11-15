@@ -424,15 +424,11 @@ async function searchTasksByTitle(searchTerm: string): Promise<Task[]> {
 }
 async function showSearchTaskMenu(): Promise<void> {
     console.clear();
-    const searchTerm: string = await getStringInput(
-        "Ingresa el título o parte del título a buscar (o deja en blanco para volver): "
-    );
 
-    if (searchTerm === "") {
-        // Si deja en blanco, volvemos al menú anterior
-        return;
-    }
+    const raw = await rl.question("Ingresa el título o parte del título a buscar (o deja en blanco para volver");
+    const searchTerm = raw.trim();
 
+    if (searchTerm === "") return;
     const results: Task[] = await searchTasksByTitle(searchTerm);
 
     if (results.length === 0) {
@@ -501,46 +497,53 @@ async function addNewTask({
     difficulty: Difficulty;
     dueDate: Date | null;
 }): Promise<void> {
+
+    const now = new Date();
+
     const newTask: Task = {
+        id: tasks.length > 0 ? tasks[tasks.length - 1].id + 1 : 1,
         title,
         description,
         status,
         difficulty,
-        createdAt: new Date(),
-        dueDate
+        createdAt: now,
+        dueDate,
+        lastEdited: now
     };
 
     tasks.push(newTask);
-    console.log("\n✅ Tarea agregada correctamente.\n");
+    console.log("\nTarea agregada correctamente.\n");
 }
 async function getDueDateInput(): Promise<Date | null> {
     while (true) {
-        const input: string = await getStringInput(
+        const raw = await rl.question(
             "Ingresa la fecha de vencimiento (dd/mm/yyyy), deja en blanco para no ponerla: "
         );
+        const input = raw.trim();
 
-        if (input === "" || input === " ") {
-            return null; // el usuario no quiere poner fecha
-        } else {
-            const parts: string[] = input.split("/");
-            if (parts.length === 3) {
-                const day: number = parseInt(parts[0]!, 10);
-                const month: number = parseInt(parts[1]!, 10) - 1; // JS cuenta meses desde 0
-                const year: number = parseInt(parts[2]!, 10);
+        if (input === "") {
+            return null;
+        }
+        
+        const parts = input.split("/");
+        if (parts.length === 3) {
+            const day = parseInt(parts[0]!, 10);
+            const month = parseInt(parts[1]!, 10) - 1;
+            const year = parseInt(parts[2]!, 10);
 
-                const nuevaFecha: Date = new Date(year, month, day);
+            const nuevaFecha = new Date(year, month, day);
 
-                if (!isNaN(nuevaFecha.getTime())) {
-                    return nuevaFecha; // fecha válida
-                } else {
-                    console.log("Fecha inválida, intenta nuevamente.");
-                }
+            if (!isNaN(nuevaFecha.getTime())) {
+                return nuevaFecha;
             } else {
-                console.log("Formato incorrecto. Usa dd/mm/yyyy.");
+                console.log("Fecha inválida, intenta nuevamente.");
             }
+        } else {
+            console.log("Formato incorrecto. Usa dd/mm/yyyy.");
         }
     }
 }
+
 //---------------------------------------//
 
 //-----------// MAIN MENU //-----------// 
