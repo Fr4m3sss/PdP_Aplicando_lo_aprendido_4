@@ -534,8 +534,8 @@ async function showAddTaskMenu(): Promise<void> {
     const title: string = await getStringInput("Título: ");
     const description: string = await getStringInput("Descripción: ");
     
-const statusInput = await getValidStatus();
-const difficultyInput = await getValidDifficulty();
+    const statusInput = await getValidStatus();
+    const difficultyInput = await getValidDifficulty();
 
     const dueDate: Date | null = await getDueDateInput();
 
@@ -546,7 +546,7 @@ const difficultyInput = await getValidDifficulty();
 
     tasks = addTask(tasks, newTask);
 
-    console.log(`\n✅ Tarea "${title}" agregada correctamente.`);
+    console.log(`\n Tarea "${title}" agregada correctamente.`);
 }
 async function getDueDateInput(): Promise<Date | null> {
     while (true) {
@@ -578,7 +578,6 @@ async function getDueDateInput(): Promise<Date | null> {
     }
 }
 
-//---------------------------------------//
 
 //-----------// MAIN MENU //-----------// 
 async function showMainMenu(): Promise<void> {
