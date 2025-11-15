@@ -3,47 +3,61 @@ import { stdin as input, stdout as output } from "node:process";
 
 const rl = readline.createInterface({ input, output });
 
-type Status = "pendiente" | "en progreso" | "completado" | "";
-type Difficulty = "facil" | "medio" | "dificil" | "";
+
+//-------------------------------------------------------------//
+const STATUS = Object.freeze({
+    PENDING: "pendiente",
+    IN_PROGRESS: "en progreso",
+    COMPLETED: "completado",
+    CANCELED: "cancelada"
+});
+type Status = (typeof STATUS)[keyof typeof STATUS];
+
+const DIFFICULTY = Object.freeze({
+    EASY: "facil",
+    MEDIUM: "medio",
+    HARD: "dificil",
+})
+type Difficulty = (typeof DIFFICULTY)[keyof typeof DIFFICULTY];
 
 interface Task {
     title: string;
     description: string;
+    id: number;
     status: Status;
     difficulty: Difficulty;
     createdAt: Date;
     dueDate: Date | null;
-    lastEdited?: Date | null;
+    lastEdited: Date;
 }
 
-//----------Array global de tareas---------//
 
-const tasks: Task[] = [
+
+//----------Estado inicial de las tareas---------//
+
+const initialTasks: readonly Task[] = Object.freeze([
     {
+        id: 1,
         title: "Aprender Node.js",
         description: "Revisar documentación y practicar ejemplos",
-        status: "pendiente",
-        difficulty: "facil",
+        status: STATUS.PENDING,
+        difficulty: DIFFICULTY.EASY,
         createdAt: new Date(),
-        dueDate: null
+        dueDate: null,
+        lastEdited: new Date()
     },
     {
+        id: 2,
         title: "Aprender Java",
         description: "Revisar documentación y practicar ejemplos",
-        status: "en progreso",
-        difficulty: "medio",
+        status: STATUS.IN_PROGRESS,
+        difficulty: DIFFICULTY.MEDIUM,
         createdAt: new Date(),
-        dueDate: null
-    },
-    {
-        title: "Aprender Typescript",
-        description: "Revisar documentación y practicar ejemplos",
-        status: "completado",
-        difficulty: "dificil",
-        createdAt: new Date(),
-        dueDate: null
+        dueDate: null,
+        lastEdited: new Date()
     }
-];
+]);
+
 
 
 //-----Funciones de entrada de datos------//
